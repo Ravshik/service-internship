@@ -1,0 +1,1126 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Запись на стажировку</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f6f8;
+      --card: #fff;
+      --text: #17212b;
+      --muted: #667587;
+      --line: #dbe2ea;
+      --soft: #eef3f7;
+      --accent: #176f7a;
+      --accent-2: #245f9d;
+      --ok: #16745f;
+      --warn: #9a681a;
+      --bad: #b94141;
+      --field: #fff;
+      font-family: Arial, "Segoe UI", sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111820;
+        --card: #18222d;
+        --text: #eef4f7;
+        --muted: #a4b3c2;
+        --line: #304050;
+        --soft: #202d39;
+        --accent: #42aeb8;
+        --accent-2: #8dbcf2;
+        --ok: #67d4a0;
+        --warn: #e2b25f;
+        --bad: #f08383;
+        --field: #111820;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { opacity: .58; cursor: not-allowed; }
+    .app { width: min(100%, 760px); margin: 0 auto; padding: 16px 14px 32px; }
+    .top { display: grid; gap: 12px; margin-bottom: 12px; }
+    h1 { margin: 0; font-size: 31px; line-height: 1.06; letter-spacing: 0; }
+    h2 { margin: 0 0 10px; font-size: 20px; line-height: 1.2; letter-spacing: 0; }
+    h3 { margin: 0; font-size: 17px; line-height: 1.25; letter-spacing: 0; }
+    .lead { margin: 0; color: var(--muted); line-height: 1.42; }
+    .panel, .card, .date-card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+    .panel { padding: 14px; margin-bottom: 12px; }
+    .tabs, .subtabs, .actions, .date-actions { display: grid; gap: 8px; }
+    .tabs { grid-template-columns: 1fr 1fr; }
+    .subtabs { grid-template-columns: 1fr 1fr; margin-bottom: 12px; }
+    .subtab[data-section="create"] { grid-column: 1 / -1; order: -1; }
+    .tab, .subtab, .ghost, .danger, .success, .secondary {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--field);
+      color: var(--muted);
+      font-weight: 900;
+    }
+    .tab.active, .subtab.active { border-color: var(--accent); background: #e5f4f6; color: var(--accent); }
+    .form, .list, .candidate-list { display: grid; gap: 10px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { display: grid; gap: 5px; color: var(--muted); font-size: 13px; font-weight: 800; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--field);
+      color: var(--text);
+      outline: none;
+    }
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 40px;
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position: calc(100% - 19px) 50%, calc(100% - 13px) 50%;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+    input[data-date-field] { letter-spacing: 0; }
+    .date-picker {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--field);
+      color: var(--text);
+      text-align: left;
+      font-weight: 900;
+    }
+    .calendar {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--field);
+      display: grid;
+      gap: 8px;
+    }
+    .calendar-head {
+      display: grid;
+      grid-template-columns: 38px 1fr 38px;
+      align-items: center;
+      gap: 8px;
+    }
+    .calendar-title { text-align: center; font-weight: 950; }
+    .calendar-nav {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-weight: 950;
+    }
+    .calendar-week, .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .calendar-week span {
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .calendar-day {
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .calendar-day.blank { visibility: hidden; }
+    .calendar-day.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+    textarea { min-height: 86px; resize: vertical; line-height: 1.42; }
+    .btn {
+      min-height: 52px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 950;
+    }
+    .secondary { color: var(--accent-2); background: #edf5ff; border-color: #cfe0f5; }
+    .success { color: var(--ok); background: #edf8f2; border-color: #cfe9dc; }
+    .danger { color: var(--bad); background: #fff0f0; border-color: #f0cccc; }
+    @media (prefers-color-scheme: dark) {
+      .secondary { background: #17283c; border-color: #2b4a68; }
+      .success { background: #173228; border-color: #285d48; }
+      .danger { background: #3a1d22; border-color: #6a333b; }
+    }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+    .stat { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 7px; text-align: center; }
+    .stat b { display: block; font-size: 23px; line-height: 1.05; }
+    .stat span { color: var(--muted); font-size: 12px; font-weight: 800; }
+    .date-list { display: grid; gap: 10px; }
+    .date-card { padding: 12px; display: grid; gap: 10px; }
+    .date-card.selected { border-color: var(--accent); background: #f0fbfc; }
+    .date-card.archived { background: #f7f8fa; }
+    @media (prefers-color-scheme: dark) {
+      .date-card.selected { background: #12333a; }
+      .date-card.archived { background: #151e27; }
+    }
+    .date-head, .card-head, .candidate-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .date-title, .name { font-weight: 950; line-height: 1.3; }
+    .meta { color: var(--muted); font-size: 14px; line-height: 1.42; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .open { background: #edf8f2; color: var(--ok); }
+    .full { background: #fff3df; color: var(--warn); }
+    .closed { background: #fff0f0; color: var(--bad); }
+    .new { background: #edf5ff; color: var(--accent-2); }
+    .wait { background: #fff3df; color: var(--warn); }
+    .done { background: #edf8f2; color: var(--ok); }
+    .bad { background: #fff0f0; color: var(--bad); }
+    .card { padding: 12px; display: grid; gap: 9px; }
+    .empty { text-align: center; color: var(--muted); padding: 26px 10px; }
+    .notice { background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 12px; color: var(--text); line-height: 1.42; }
+    .message { white-space: pre-wrap; }
+    .rules { display: grid; gap: 8px; }
+    .rules b { color: var(--text); }
+    .status-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stage {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--field);
+      padding: 10px;
+      display: grid;
+      gap: 6px;
+      min-height: 104px;
+    }
+    .stage.active { border-color: rgba(23, 111, 122, .45); background: #f0fbfc; }
+    @media (prefers-color-scheme: dark) {
+      .stage.active { border-color: rgba(66, 174, 184, .55); background: #12333a; }
+    }
+    .stage-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: var(--soft);
+      color: var(--muted);
+      font-weight: 950;
+    }
+    .stage.active .stage-icon { background: var(--accent); color: #fff; }
+    .stage b { font-size: 13px; line-height: 1.2; }
+    .stage span { color: var(--muted); font-size: 12px; line-height: 1.3; }
+    .mini-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .mini-badge { border: 1px solid var(--line); border-radius: 999px; padding: 5px 8px; color: var(--muted); font-size: 12px; font-weight: 900; }
+    .mini-badge.on { border-color: rgba(22, 116, 95, .24); background: rgba(22, 116, 95, .08); color: var(--ok); }
+    .mini-badge.off { border-color: var(--line); background: var(--soft); color: var(--muted); }
+    .action-current { outline: 2px solid rgba(23, 111, 122, .28); }
+    .archive-label { color: var(--muted); font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0; }
+    .date-actions { grid-template-columns: 1fr; }
+    .actions { grid-template-columns: 1fr 1fr 1fr; }
+    .compact-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .mini-action {
+      min-height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      padding: 0 10px;
+      font-size: 13px;
+      font-weight: 900;
+      background: var(--field);
+      color: var(--muted);
+    }
+    .mini-action.success { color: var(--ok); }
+    .mini-action.danger { color: var(--bad); }
+    .mini-action.secondary { color: var(--accent-2); }
+    .edit-panel { display: none; }
+    .date-card.editing .edit-panel { display: grid; gap: 10px; }
+    .hidden { display: none !important; }
+    .utility { display: flex; justify-content: flex-end; }
+    .utility button { min-height: 34px; border-radius: 8px; padding: 0 10px; font-size: 12px; }
+    @media (max-width: 720px) {
+      .grid, .tabs, .date-actions, .actions, .status-flow { grid-template-columns: 1fr; }
+      .subtabs { grid-template-columns: 1fr 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      h1 { font-size: 29px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <h1>Запись на стажировку</h1>
+      <p class="lead">Официант выбирает доступную дату, рекрут подтверждает выход и ведет кандидата до итогового решения.</p>
+      <nav class="tabs" aria-label="Роль">
+        <button class="tab active" data-role="trainee" type="button">Я стажер</button>
+        <button class="tab" data-role="recruiter" type="button">Я рекрут</button>
+      </nav>
+    </header>
+
+    <section id="traineeView">
+      <section class="panel">
+        <h2>Перед записью</h2>
+        <div class="rules meta">
+          <div><b>Стажировка длится 6-8 часов, оплата 1000 руб.</b> Время выхода назначает менеджер после добавления в рабочую группу.</div>
+          <div>Расписание стажировок отправляем примерно за 2 дня до мероприятий, потому что условия могут меняться.</div>
+          <div>Заранее укажите, до скольки у вас учеба или другие ограничения. Начало может быть с 12:00, окончание примерно в 21:00-22:00.</div>
+          <div>Если ограничений нет, можно встать в общую очередь: рекрут добавит вас на первую подходящую стажировку.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Мои данные</h2>
+        <div class="form">
+          <label>ФИО
+            <input id="traineeName" placeholder="Например: Иванов Иван">
+          </label>
+          <label>Обучение по банкетному обслуживанию
+            <select id="traineeTraining">
+              <option value="passed">Проходил обучение</option>
+              <option value="not_passed">Не проходил обучение</option>
+            </select>
+          </label>
+          <div class="grid">
+            <label>Какая стажировка
+              <select id="traineeAttempt">
+                <option value="first">Первая стажировка</option>
+                <option value="repeat">Повторная стажировка</option>
+              </select>
+            </label>
+            <label>Опыт обслуживания
+              <select id="traineeExperience">
+                <option value="yes">Есть опыт</option>
+                <option value="no">Нет опыта</option>
+              </select>
+            </label>
+          </div>
+          <label>Ограничения
+            <textarea id="traineeLimits" placeholder="Например: могу после 17:00, не могу 29.06, удобнее центр"></textarea>
+          </label>
+          <button class="secondary" type="button" id="queueBtn">Встать в общую очередь без даты</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Доступные даты</h2>
+        <div class="date-list" id="publicDates"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Мой статус</h2>
+        <div id="myApplication"></div>
+      </section>
+    </section>
+
+    <section id="recruiterView" class="hidden">
+      <section class="panel" id="recruiterGate">
+        <h2>Доступ рекрута</h2>
+        <div class="form">
+          <label>Код доступа
+            <input id="recruiterCode" placeholder="Для демо: 2026">
+          </label>
+          <button class="btn" id="unlockRecruiterBtn" type="button">Войти в кабинет</button>
+          <div class="meta">Кабинет рекрута показывает даты, места, очередь и список кандидатов.</div>
+        </div>
+      </section>
+
+      <div id="recruiterWorkspace" class="hidden">
+        <div class="utility">
+          <button class="danger" id="clearBtn" type="button">Очистить</button>
+        </div>
+        <section class="stats" aria-label="Сводка">
+          <div class="stat"><b id="statDates">0</b><span>дат открыто</span></div>
+          <div class="stat"><b id="statNew">0</b><span>новые заявки</span></div>
+          <div class="stat"><b id="statConfirmed">0</b><span>подтверждено</span></div>
+          <div class="stat"><b id="statFeedback">0</b><span>ждет фидбек</span></div>
+        </section>
+
+        <nav class="subtabs" aria-label="Разделы рекрута">
+          <button class="subtab active" data-section="dates" type="button">Даты</button>
+          <button class="subtab" data-section="create" type="button">Создать</button>
+          <button class="subtab" data-section="candidates" type="button">Кандидаты</button>
+        </nav>
+
+        <section id="datesSection">
+          <div class="date-list" id="recruiterDates"></div>
+        </section>
+
+        <section id="createSection" class="hidden">
+          <section class="panel">
+            <h2>Новая стажировка</h2>
+            <div class="form">
+              <div class="grid">
+                <label>Дата
+                  <input id="shiftDate" type="hidden">
+                  <button class="date-picker" id="shiftDateButton" type="button">Выберите дату</button>
+                </label>
+                <label>Количество мест
+                  <input id="shiftSeats" type="number" min="1" max="30" value="4">
+                </label>
+              </div>
+              <div class="calendar" id="shiftCalendar"></div>
+              <button class="btn" id="createShiftBtn" type="button">Создать дату</button>
+            </div>
+          </section>
+        </section>
+
+        <section id="candidatesSection" class="hidden">
+          <section class="panel">
+            <label>Фильтр по статусу
+              <select id="candidateFilter">
+                <option value="all">Все</option>
+                <option value="new">Новые</option>
+                <option value="queue">Общая очередь</option>
+                <option value="confirmed">Подтвержденные</option>
+                <option value="rejected">Не ставим</option>
+                <option value="feedback">Ждет обратную связь</option>
+                <option value="passed">Прошел</option>
+                <option value="failed">Не прошел</option>
+                <option value="noshow">Не вышел</option>
+              </select>
+            </label>
+          </section>
+          <div class="candidate-list" id="candidateList"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const KEY = "internship-booking-app";
+    const PROFILE_KEY = `${KEY}-profile`;
+    const statusNames = {
+      new: "Новая заявка",
+      confirmed: "Выход подтвержден",
+      rejected: "Отклонен",
+      queue: "В общей очереди",
+      waiting: "Ожидает стажировку",
+      feedback: "Ждем фидбек наставника",
+      report: "Ждем отчет кандидата",
+      passed: "Прошел",
+      failed: "Не прошел",
+      noshow: "Не вышел"
+    };
+    const statusClass = {
+      new: "new",
+      confirmed: "done",
+      rejected: "bad",
+      queue: "wait",
+      waiting: "done",
+      feedback: "wait",
+      report: "wait",
+      passed: "done",
+      failed: "bad",
+      noshow: "bad"
+    };
+    const shiftStatusNames = { open: "Открыта", full: "Заполнена", closed: "Закрыта", done: "Прошла", canceled: "Отменена" };
+    const shiftStatusClass = { open: "open", full: "full", closed: "closed", done: "full", canceled: "closed" };
+    const messages = {
+      new: "Вы заняли очередь на стажировку. Рекрут проверит заявку и подтвердит выход.",
+      confirmed: "Ваша стажировка подтверждена.\n\nСкоро мы отправим ссылку на рабочую группу. Пока ознакомьтесь с правилами.",
+      rejected: "На выбранную дату вас не поставили. Если вы можете выйти в другой день, встаньте в очередь заново.",
+      queue: "Вы в общей очереди. Если ограничений нет или они подходят под ближайшую стажировку, рекрут добавит вас на дату.",
+      feedback: "Спасибо за выход на стажировку. Сейчас мы собираем обратную связь от наставника.",
+      passed: "Поздравляем, стажировка пройдена. Дальше с вами свяжется команда.",
+      failed: "Спасибо за прохождение стажировки. По итогам обратной связи мы не можем продолжить процесс."
+    };
+
+    const trainingNames = { passed: "Проходил обучение", not_passed: "Не проходил обучение" };
+    const attemptNames = { first: "Первая стажировка", repeat: "Повторная стажировка" };
+    const experienceNames = { yes: "Есть опыт", no: "Нет опыта" };
+
+    let role = "trainee";
+    let recruiterSection = "dates";
+    let recruiterUnlocked = localStorage.getItem(`${KEY}-recruiter`) === "yes";
+    let editingShiftId = null;
+    let calendarMonth = new Date();
+    let data = load();
+
+    const fields = {
+      traineeName: document.getElementById("traineeName"),
+      traineeTraining: document.getElementById("traineeTraining"),
+      traineeAttempt: document.getElementById("traineeAttempt"),
+      traineeExperience: document.getElementById("traineeExperience"),
+      traineeLimits: document.getElementById("traineeLimits"),
+      shiftDate: document.getElementById("shiftDate"),
+      shiftDateButton: document.getElementById("shiftDateButton"),
+      shiftCalendar: document.getElementById("shiftCalendar"),
+      shiftSeats: document.getElementById("shiftSeats"),
+      candidateFilter: document.getElementById("candidateFilter"),
+      recruiterCode: document.getElementById("recruiterCode")
+    };
+
+    function demoData() {
+      return {
+        traineeProfile: { name: "", training: "passed", attempt: "first", experience: "yes", limits: "" },
+        shifts: [
+          { id: 1, date: "2026-06-26", seats: 3, status: "open" },
+          { id: 2, date: "2026-06-28", seats: 4, status: "open" },
+          { id: 3, date: "2026-06-30", seats: 2, status: "open" }
+        ],
+        applications: [
+          { id: 101, shiftId: 2, name: "Петрова Алина", training: "passed", attempt: "first", experience: "yes", limits: "Могу после 14:00, центр подходит.", status: "new", recruiterComment: "", candidateReport: false, mentorReport: false, createdAt: "2026-06-25" },
+          { id: 102, shiftId: 1, name: "Смирнов Никита", training: "not_passed", attempt: "repeat", experience: "yes", limits: "Без ограничений.", status: "confirmed", recruiterComment: "Подтвержден на 26.06.", candidateReport: true, mentorReport: false, createdAt: "2026-06-25" },
+          { id: 103, shiftId: null, name: "Козлова Мария", training: "passed", attempt: "first", experience: "no", limits: "Ограничений нет, готова на ближайшую дату.", status: "queue", recruiterComment: "", candidateReport: false, mentorReport: false, createdAt: "2026-06-25" }
+        ]
+      };
+    }
+
+    function load() {
+      const profile = loadProfile();
+      if (window.__SERVER_STATE__) {
+        return {
+          traineeProfile: profile,
+          shifts: window.__SERVER_STATE__.shifts || [],
+          applications: window.__SERVER_STATE__.applications || []
+        };
+      }
+      const raw = localStorage.getItem(KEY);
+      if (!raw) {
+        const initial = demoData();
+        initial.traineeProfile = profile;
+        localStorage.setItem(KEY, JSON.stringify(initial));
+        return initial;
+      }
+      const localData = JSON.parse(raw);
+      localData.traineeProfile = profile;
+      return localData;
+    }
+
+    function loadProfile() {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (!raw) return { name: "", training: "passed", attempt: "first", experience: "yes", limits: "" };
+      return JSON.parse(raw);
+    }
+
+    function saveProfile() {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(data.traineeProfile));
+    }
+
+    function save() {
+      updateShiftStatuses();
+      saveProfile();
+      if (window.__SERVER_STATE__) {
+        fetch("/api/state", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ shifts: data.shifts, applications: data.applications })
+        }).catch(error => console.error("Не удалось сохранить данные на сервере", error));
+        return;
+      }
+      localStorage.setItem(KEY, JSON.stringify(data));
+    }
+
+    function syncProfile() {
+      data.traineeProfile = {
+        name: fields.traineeName.value.trim(),
+        training: fields.traineeTraining.value,
+        attempt: fields.traineeAttempt.value,
+        experience: fields.traineeExperience.value,
+        limits: fields.traineeLimits.value.trim()
+      };
+      saveProfile();
+    }
+
+    function fillProfile() {
+      fields.traineeName.value = data.traineeProfile.name || "";
+      fields.traineeTraining.value = data.traineeProfile.training || "passed";
+      fields.traineeAttempt.value = data.traineeProfile.attempt || "first";
+      fields.traineeExperience.value = data.traineeProfile.experience || "yes";
+      fields.traineeLimits.value = data.traineeProfile.limits || "";
+    }
+
+    function updateShiftStatuses() {
+      data.shifts.forEach(shift => {
+        if (["closed", "done", "canceled"].includes(shift.status)) return;
+        shift.status = confirmedCount(shift.id) >= Number(shift.seats) ? "full" : "open";
+      });
+    }
+
+    function confirmedCount(shiftId) {
+      return data.applications.filter(item => item.shiftId === shiftId && ["confirmed", "waiting", "feedback", "report", "passed"].includes(item.status)).length;
+    }
+
+    function pendingCount(shiftId) {
+      return data.applications.filter(item => item.shiftId === shiftId && item.status === "new").length;
+    }
+
+    function publicShifts() {
+      updateShiftStatuses();
+      return data.shifts.filter(shift => shift.status === "open").sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    function traineeApplication() {
+      const name = data.traineeProfile.name;
+      if (!name) return null;
+      return [...data.applications].reverse().find(item => item.name === name);
+    }
+
+    function formatDate(value) {
+      if (!value) return "без даты";
+      const normalized = normalizeDateInput(value);
+      const date = new Date(`${normalized}T12:00:00`);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", weekday: "short" });
+    }
+
+    function normalizeDateInput(value) {
+      const raw = String(value || "").trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+      const match = raw.match(/^(\d{1,2})[.\-/](\d{1,2})(?:[.\-/](\d{2,4}))?$/);
+      if (!match) return raw;
+      const day = match[1].padStart(2, "0");
+      const month = match[2].padStart(2, "0");
+      const year = (match[3] || "2026").padStart(4, "20");
+      return `${year}-${month}-${day}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" })[char]);
+    }
+
+    function render() {
+      updateShiftStatuses();
+      document.querySelectorAll(".tab").forEach(tab => tab.classList.toggle("active", tab.dataset.role === role));
+      document.getElementById("traineeView").classList.toggle("hidden", role !== "trainee");
+      document.getElementById("recruiterView").classList.toggle("hidden", role !== "recruiter");
+      document.getElementById("recruiterGate").classList.toggle("hidden", recruiterUnlocked);
+      document.getElementById("recruiterWorkspace").classList.toggle("hidden", !recruiterUnlocked);
+      renderTrainee();
+      renderRecruiter();
+    }
+
+    function renderTrainee() {
+      const dates = publicShifts();
+      const current = traineeApplication();
+      const canEditCurrent = current && ["new", "queue"].includes(current.status);
+      document.getElementById("publicDates").innerHTML = dates.length ? dates.map(shift => {
+        const free = Number(shift.seats) - confirmedCount(shift.id);
+        const isSelected = current && current.shiftId === shift.id && current.status === "new";
+        const isLocked = current && !canEditCurrent;
+        const buttonText = isSelected ? "Отменить запись" : isLocked ? "Запись уже распределена" : canEditCurrent ? "Перенести на эту дату" : "Занять очередь";
+        const action = isSelected ? "cancel" : "book";
+        return `
+          <article class="date-card ${isSelected ? "selected" : ""}">
+            <div class="date-head">
+              <div>
+                <div class="date-title">${formatDate(shift.date)}</div>
+                <div class="meta">${isSelected ? "Вы уже заняли очередь на эту дату." : `Осталось мест: <b>${free}</b>`}</div>
+              </div>
+              <span class="pill ${isSelected ? "new" : "open"}">${isSelected ? "Выбрано" : "Доступно"}</span>
+            </div>
+            <button class="${isSelected ? "danger" : "btn"}" type="button" data-action="${action}" data-book="${shift.id}" ${isLocked ? "disabled" : ""}>${buttonText}</button>
+          </article>
+        `;
+      }).join("") : `<div class="empty">Открытых дат пока нет.</div>`;
+
+      document.getElementById("myApplication").innerHTML = current ? renderMyApplication(current) : `<div class="notice">Заполните ФИО, ограничения и выберите дату. После записи здесь появится понятный статус заявки.</div>`;
+    }
+
+    function renderMyApplication(app) {
+      const shift = data.shifts.find(item => item.id === app.shiftId);
+      const message = messages[app.status] || messages.new;
+      const processed = ["confirmed", "waiting", "feedback", "report", "passed", "failed", "noshow"].includes(app.status);
+      const after = ["feedback", "report", "passed", "failed"].includes(app.status);
+      return `
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <h3>${escapeHtml(app.name)}</h3>
+              <div class="meta">${shift ? `Выбранная дата: ${formatDate(shift.date)}` : "Вы в общей очереди без конкретной даты"}</div>
+            </div>
+            <span class="pill ${statusClass[app.status] || "new"}">${statusNames[app.status] || app.status}</span>
+          </div>
+          <div class="mini-badges">
+            ${badge(app.training, "passed", trainingNames[app.training] || "Обучение не указано")}
+            ${badge(app.attempt, "first", attemptNames[app.attempt] || "Стажировка не указана")}
+            ${badge(app.experience, "yes", experienceNames[app.experience] || "Опыт не указан")}
+          </div>
+          <div class="notice message">${escapeHtml(message)}</div>
+          <div class="status-flow">
+            <div class="stage active"><div class="stage-icon">1</div><b>Заявка создана</b><span>${shift ? "Дата выбрана." : "Вы стоите в общей очереди."}</span></div>
+            <div class="stage ${processed ? "active" : ""}"><div class="stage-icon">2</div><b>Рекрут распределяет</b><span>${processed ? "Запись обработана." : "Пока можно отменить."}</span></div>
+            <div class="stage ${after ? "active" : ""}"><div class="stage-icon">3</div><b>Итог стажировки</b><span>${after ? "Ждем или получили фидбек." : "Появится после выхода."}</span></div>
+          </div>
+          ${app.recruiterComment ? `<div class="meta">Комментарий рекрута: ${escapeHtml(app.recruiterComment)}</div>` : ""}
+          ${["new", "queue"].includes(app.status) ? `<button class="danger" type="button" data-cancel-current="${app.id}">Отменить запись</button>` : ""}
+        </article>
+      `;
+    }
+
+    function renderRecruiter() {
+      if (!recruiterUnlocked) return;
+      document.querySelectorAll(".subtab").forEach(tab => tab.classList.toggle("active", tab.dataset.section === recruiterSection));
+      ["dates", "create", "candidates"].forEach(section => {
+        document.getElementById(`${section}Section`).classList.toggle("hidden", recruiterSection !== section);
+      });
+      document.getElementById("statDates").textContent = data.shifts.filter(shift => shift.status === "open").length;
+      document.getElementById("statNew").textContent = data.applications.filter(app => ["new", "queue"].includes(app.status)).length;
+      document.getElementById("statConfirmed").textContent = data.applications.filter(app => ["confirmed", "waiting"].includes(app.status)).length;
+      document.getElementById("statFeedback").textContent = data.applications.filter(app => app.status === "feedback").length;
+      renderRecruiterDates();
+      renderCandidates();
+      renderCreateCalendar();
+    }
+
+    function renderCreateCalendar() {
+      if (!fields.shiftCalendar) return;
+      const selected = fields.shiftDate.value;
+      const year = calendarMonth.getFullYear();
+      const month = calendarMonth.getMonth();
+      const first = new Date(year, month, 1);
+      const days = new Date(year, month + 1, 0).getDate();
+      const offset = (first.getDay() + 6) % 7;
+      const blanks = Array.from({ length: offset }, () => `<button class="calendar-day blank" type="button" tabindex="-1"></button>`);
+      const dayButtons = Array.from({ length: days }, (_, index) => {
+        const day = index + 1;
+        const value = dateValue(year, month, day);
+        return `<button class="calendar-day ${selected === value ? "active" : ""}" type="button" data-calendar-day="${value}">${day}</button>`;
+      });
+      fields.shiftDateButton.textContent = selected ? formatDate(selected) : "Выберите дату";
+      fields.shiftCalendar.innerHTML = `
+        <div class="calendar-head">
+          <button class="calendar-nav" type="button" data-calendar-nav="-1">‹</button>
+          <div class="calendar-title">${calendarMonth.toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}</div>
+          <button class="calendar-nav" type="button" data-calendar-nav="1">›</button>
+        </div>
+        <div class="calendar-week"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+        <div class="calendar-grid">${blanks.join("")}${dayButtons.join("")}</div>
+      `;
+    }
+
+    function dateValue(year, month, day) {
+      return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+
+    function renderRecruiterDates() {
+      document.getElementById("recruiterDates").innerHTML = data.shifts
+        .slice()
+        .sort((a, b) => {
+          const aArchive = ["closed", "done", "canceled"].includes(a.status) ? 1 : 0;
+          const bArchive = ["closed", "done", "canceled"].includes(b.status) ? 1 : 0;
+          return aArchive - bArchive || a.date.localeCompare(b.date);
+        })
+        .map(shift => {
+          const confirmed = confirmedCount(shift.id);
+          const pending = pendingCount(shift.id);
+          const free = Math.max(Number(shift.seats) - confirmed, 0);
+          const isArchive = ["closed", "done", "canceled"].includes(shift.status);
+          const shiftApps = data.applications.filter(app => app.shiftId === shift.id);
+          const queueApps = data.applications.filter(app => app.shiftId === null && app.status === "queue");
+          const isEditing = editingShiftId === shift.id;
+          return `
+            <article class="date-card ${isArchive ? "archived" : ""} ${isEditing ? "editing" : ""}">
+              <div class="date-head">
+                <div>
+                  <div class="date-title">${formatDate(shift.date)}</div>
+                  <div class="meta">
+                    Мест: <b>${confirmed}/${shift.seats}</b>, свободно: <b>${free}</b>, новых: <b>${pending}</b>
+                  </div>
+                </div>
+                <span class="pill ${shiftStatusClass[shift.status]}">${shiftStatusNames[shift.status]}</span>
+              </div>
+              ${isArchive ? `<div class="archive-label">Архив: дата скрыта от стажеров</div>` : ""}
+              <button class="secondary" type="button" data-shift-action="edit" data-id="${shift.id}">${isEditing ? "Скрыть редактирование" : "Редактировать дату"}</button>
+              <div class="edit-panel">
+              <div class="grid">
+                <label>Дата
+                  <input data-date-field inputmode="numeric" data-shift-edit="${shift.id}" data-field="date" value="${escapeHtml(formatDateInput(shift.date))}">
+                </label>
+                <label>Мест
+                  <input type="number" min="1" max="30" data-shift-edit="${shift.id}" data-field="seats" value="${shift.seats}">
+                </label>
+              </div>
+              </div>
+              <div class="list">
+                ${shiftApps.length ? shiftApps.map(app => renderDateCandidate(app)).join("") : `<div class="empty">На эту дату пока никто не записался.</div>`}
+              </div>
+              ${queueApps.length && !isArchive ? `
+                <div class="notice">
+                  <b>Общая очередь без даты</b>
+                  <div class="list" style="margin-top:8px">
+                    ${queueApps.map(app => `
+                      <article class="card">
+                        <div class="candidate-head">
+                          <div>
+                            <div class="name">${escapeHtml(app.name)}</div>
+                            <div class="mini-badges">
+                              ${badge(app.training, "passed", trainingNames[app.training] || "Обучение не указано")}
+                              ${badge(app.attempt, "first", attemptNames[app.attempt] || "Стажировка не указана")}
+                              ${badge(app.experience, "yes", experienceNames[app.experience] || "Опыт не указан")}
+                            </div>
+                          </div>
+                          <button class="mini-action success" type="button" data-assign="${app.id}" data-shift="${shift.id}">Добавить</button>
+                        </div>
+                        <div class="meta">Ограничения: ${escapeHtml(app.limits || "нет")}</div>
+                      </article>
+                    `).join("")}
+                  </div>
+                </div>
+              ` : ""}
+              <div class="date-actions">
+                <button class="secondary" type="button" data-shift-action="toggle" data-id="${shift.id}">${isArchive ? "Вернуть в активные" : "Закрыть дату и убрать в архив"}</button>
+              </div>
+            </article>
+          `;
+        }).join("");
+    }
+
+    function formatDateInput(value) {
+      if (!value) return "";
+      const normalized = normalizeDateInput(value);
+      const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return match ? `${match[3]}.${match[2]}.${match[1]}` : value;
+    }
+
+    function badge(value, positive, label) {
+      return `<span class="mini-badge ${value === positive ? "on" : "off"}">${label}</span>`;
+    }
+
+    function renderDateCandidate(app) {
+      return `
+        <article class="card">
+          <div class="candidate-head">
+            <div>
+              <div class="name">${escapeHtml(app.name)}</div>
+              <div class="mini-badges">
+                ${badge(app.training, "passed", trainingNames[app.training] || "Обучение не указано")}
+                ${badge(app.attempt, "first", attemptNames[app.attempt] || "Стажировка не указана")}
+                ${badge(app.experience, "yes", experienceNames[app.experience] || "Опыт не указан")}
+              </div>
+            </div>
+            <span class="pill ${statusClass[app.status] || "new"}">${statusNames[app.status]}</span>
+          </div>
+          <div class="meta">Ограничения: ${escapeHtml(app.limits || "нет")}</div>
+          <div class="mini-badges">
+            <span class="mini-badge ${app.candidateReport ? "on" : ""}">Отчет кандидата</span>
+            <span class="mini-badge ${app.mentorReport ? "on" : ""}">Фидбек наставника</span>
+          </div>
+          <div class="compact-actions">
+            ${candidateActionButton(app, "confirmed", "Подтвердить", "success")}
+            ${candidateActionButton(app, "rejected", "Не ставим", "danger")}
+            ${candidateActionButton(app, "feedback", "Фидбек", "secondary")}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderCandidates() {
+      const filter = fields.candidateFilter.value;
+      const apps = data.applications
+        .filter(app => filter === "all" || app.status === filter)
+        .sort((a, b) => b.id - a.id);
+      document.getElementById("candidateList").innerHTML = apps.length ? apps.map(app => {
+        const shift = data.shifts.find(item => item.id === app.shiftId);
+        return `
+          <article class="card">
+            <div class="candidate-head">
+              <div>
+                <div class="name">${escapeHtml(app.name)}</div>
+                <div class="meta">
+                  ${shift ? `Дата стажировки: ${formatDate(shift.date)}` : "Общая очередь без даты"}<br>
+                  Ограничения: ${escapeHtml(app.limits || "нет")}
+                </div>
+              </div>
+              <span class="pill ${statusClass[app.status] || "new"}">${statusNames[app.status]}</span>
+            </div>
+            <div class="mini-badges">
+              ${badge(app.training, "passed", trainingNames[app.training] || "Обучение не указано")}
+              ${badge(app.attempt, "first", attemptNames[app.attempt] || "Стажировка не указана")}
+              ${badge(app.experience, "yes", experienceNames[app.experience] || "Опыт не указан")}
+              <span class="mini-badge ${app.candidateReport ? "on" : ""}" data-report="candidateReport" data-id="${app.id}">Отчет кандидата</span>
+              <span class="mini-badge ${app.mentorReport ? "on" : ""}" data-report="mentorReport" data-id="${app.id}">Фидбек наставника</span>
+            </div>
+            <label>Комментарий рекрута
+              <textarea data-comment="${app.id}" placeholder="Например: подтвержден на 28.06, ограничения не подходят, нужна вторая стажировка">${escapeHtml(app.recruiterComment || "")}</textarea>
+            </label>
+            <div class="meta">Нажатие на кнопку сразу меняет статус кандидата.</div>
+            <div class="compact-actions">
+              ${candidateActionButton(app, "confirmed", "Подтвердить", "success")}
+              ${candidateActionButton(app, "noshow", "Не вышел", "danger")}
+              ${candidateActionButton(app, "feedback", "Фидбек", "secondary")}
+              ${candidateActionButton(app, "passed", "Прошел", "success")}
+              ${candidateActionButton(app, "failed", "Не прошел", "danger")}
+            </div>
+          </article>
+        `;
+      }).join("") : `<div class="panel empty">Кандидатов по этому фильтру нет.</div>`;
+    }
+
+    function candidateActionButton(app, status, text, className) {
+      const current = app.status === status ? " action-current" : "";
+      return `<button class="mini-action ${className}${current}" type="button" data-app-action="${status}" data-id="${app.id}">${text}</button>`;
+    }
+
+    document.querySelector(".tabs").addEventListener("click", event => {
+      const tab = event.target.closest(".tab");
+      if (!tab) return;
+      role = tab.dataset.role;
+      render();
+    });
+
+    document.querySelector(".subtabs").addEventListener("click", event => {
+      const tab = event.target.closest(".subtab");
+      if (!tab) return;
+      recruiterSection = tab.dataset.section;
+      render();
+    });
+
+    Object.values(fields).forEach(field => {
+      if (!field) return;
+      field.addEventListener("input", () => {
+        syncProfile();
+      });
+    });
+
+    fields.candidateFilter.addEventListener("change", renderCandidates);
+
+    fields.shiftCalendar.addEventListener("click", event => {
+      const nav = event.target.closest("[data-calendar-nav]");
+      if (nav) {
+        calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + Number(nav.dataset.calendarNav), 1);
+        renderCreateCalendar();
+        return;
+      }
+      const day = event.target.closest("[data-calendar-day]");
+      if (!day) return;
+      fields.shiftDate.value = day.dataset.calendarDay;
+      renderCreateCalendar();
+    });
+
+    fields.shiftDateButton.addEventListener("click", () => {
+      fields.shiftCalendar.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    document.getElementById("unlockRecruiterBtn").addEventListener("click", () => {
+      if (fields.recruiterCode.value.trim() !== "2026") {
+        fields.recruiterCode.focus();
+        return;
+      }
+      recruiterUnlocked = true;
+      localStorage.setItem(`${KEY}-recruiter`, "yes");
+      render();
+    });
+
+    document.getElementById("publicDates").addEventListener("click", event => {
+      const button = event.target.closest("[data-book]");
+      if (!button) return;
+      if (button.disabled) return;
+      syncProfile();
+      if (!data.traineeProfile.name) {
+        fields.traineeName.focus();
+        return;
+      }
+      const shiftId = Number(button.dataset.book);
+      const existing = traineeApplication();
+      if (button.dataset.action === "cancel" && existing && existing.status === "new") {
+        data.applications = data.applications.filter(app => app.id !== existing.id);
+        save();
+        render();
+        return;
+      }
+      if (existing && !["new", "queue"].includes(existing.status)) return;
+      if (existing) {
+        existing.shiftId = shiftId;
+        existing.training = data.traineeProfile.training;
+        existing.attempt = data.traineeProfile.attempt;
+        existing.experience = data.traineeProfile.experience;
+        existing.limits = data.traineeProfile.limits;
+        existing.status = "new";
+        existing.recruiterComment = "";
+      } else {
+        data.applications.push({
+          id: Date.now(),
+          shiftId,
+          name: data.traineeProfile.name,
+          training: data.traineeProfile.training,
+          attempt: data.traineeProfile.attempt,
+          experience: data.traineeProfile.experience,
+          limits: data.traineeProfile.limits,
+          status: "new",
+          recruiterComment: "",
+          candidateReport: false,
+          mentorReport: false,
+          createdAt: new Date().toISOString().slice(0, 10)
+        });
+      }
+      save();
+      render();
+    });
+
+    document.getElementById("queueBtn").addEventListener("click", () => {
+      syncProfile();
+      if (!data.traineeProfile.name) {
+        fields.traineeName.focus();
+        return;
+      }
+      const existing = traineeApplication();
+      if (existing && !["new", "queue"].includes(existing.status)) return;
+      const queueData = {
+        shiftId: null,
+        name: data.traineeProfile.name,
+        training: data.traineeProfile.training,
+        attempt: data.traineeProfile.attempt,
+        experience: data.traineeProfile.experience,
+        limits: data.traineeProfile.limits || "Ограничений нет, готов на ближайшую стажировку.",
+        status: "queue",
+        recruiterComment: "",
+        candidateReport: false,
+        mentorReport: false
+      };
+      if (existing) {
+        Object.assign(existing, queueData);
+      } else {
+        data.applications.push({ id: Date.now(), ...queueData, createdAt: new Date().toISOString().slice(0, 10) });
+      }
+      save();
+      render();
+    });
+
+    document.getElementById("myApplication").addEventListener("click", event => {
+      const button = event.target.closest("[data-cancel-current]");
+      if (!button) return;
+      const app = data.applications.find(item => String(item.id) === button.dataset.cancelCurrent);
+      if (!app || !["new", "queue"].includes(app.status)) return;
+      data.applications = data.applications.filter(item => item !== app);
+      save();
+      render();
+    });
+
+    document.getElementById("createShiftBtn").addEventListener("click", () => {
+      if (!fields.shiftDate.value) {
+        fields.shiftDate.focus();
+        return;
+      }
+      data.shifts.push({
+        id: Date.now(),
+        date: normalizeDateInput(fields.shiftDate.value),
+        seats: Math.max(Number(fields.shiftSeats.value || 1), 1),
+        status: "open"
+      });
+      fields.shiftDate.value = "";
+      fields.shiftDateButton.textContent = "Выберите дату";
+      fields.shiftSeats.value = 4;
+      recruiterSection = "dates";
+      save();
+      render();
+    });
+
+    document.getElementById("recruiterDates").addEventListener("click", event => {
+      const assignButton = event.target.closest("[data-assign]");
+      if (assignButton) {
+        const app = data.applications.find(item => String(item.id) === assignButton.dataset.assign);
+        if (!app) return;
+        app.shiftId = Number(assignButton.dataset.shift);
+        app.status = "new";
+        save();
+        render();
+        return;
+      }
+      const appButton = event.target.closest("[data-app-action]");
+      if (appButton) {
+        updateCandidateStatus(appButton);
+        return;
+      }
+      const button = event.target.closest("[data-shift-action]");
+      if (!button) return;
+      const shift = data.shifts.find(item => String(item.id) === button.dataset.id);
+      if (!shift) return;
+      if (button.dataset.shiftAction === "edit") {
+        editingShiftId = editingShiftId === shift.id ? null : shift.id;
+        render();
+        return;
+      }
+      if (button.dataset.shiftAction === "toggle") {
+        shift.status = ["closed", "done", "canceled"].includes(shift.status) ? "open" : "closed";
+      }
+      if (button.dataset.shiftAction === "done") shift.status = "done";
+      save();
+      render();
+    });
+
+    document.getElementById("recruiterDates").addEventListener("input", event => {
+      const field = event.target.closest("[data-shift-edit]");
+      if (!field) return;
+      const shift = data.shifts.find(item => String(item.id) === field.dataset.shiftEdit);
+      if (!shift) return;
+      const value = field.dataset.field === "date" ? normalizeDateInput(field.value) : field.value.trim();
+      shift[field.dataset.field] = field.dataset.field === "seats" ? Math.max(Number(value || 1), 1) : value;
+      save();
+    });
+
+    document.getElementById("candidateList").addEventListener("input", event => {
+      const textarea = event.target.closest("[data-comment]");
+      if (!textarea) return;
+      const app = data.applications.find(item => String(item.id) === textarea.dataset.comment);
+      if (!app) return;
+      app.recruiterComment = textarea.value;
+      save();
+    });
+
+    document.getElementById("candidateList").addEventListener("click", event => {
+      const report = event.target.closest("[data-report]");
+      if (report) {
+        const app = data.applications.find(item => String(item.id) === report.dataset.id);
+        if (!app) return;
+        app[report.dataset.report] = !app[report.dataset.report];
+        save();
+        render();
+        return;
+      }
+      const button = event.target.closest("[data-app-action]");
+      if (!button) return;
+      updateCandidateStatus(button);
+    });
+
+    function updateCandidateStatus(button) {
+      const app = data.applications.find(item => String(item.id) === button.dataset.id);
+      if (!app) return;
+      app.status = button.dataset.appAction;
+      save();
+      render();
+    }
+
+    document.addEventListener("pointerdown", event => {
+      const active = document.activeElement;
+      if (!active || !["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName)) return;
+      if (event.target.closest("input, textarea, select")) return;
+      active.blur();
+    });
+
+    document.addEventListener("focusin", event => {
+      if (!event.target.matches("input, textarea, select")) return;
+      setTimeout(() => {
+        event.target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 260);
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      data = { traineeProfile: { name: "", training: "passed", attempt: "first", experience: "yes", limits: "" }, shifts: [], applications: [] };
+      save();
+      fillProfile();
+      render();
+    });
+
+    fillProfile();
+    render();
+  </script>
+</body>
+</html>
+ 
