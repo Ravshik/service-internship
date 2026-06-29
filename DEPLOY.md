@@ -52,6 +52,32 @@ cd ~/ravshan/service-internship-booking
 docker compose up -d --build
 ```
 
+## Telegram-уведомления
+
+Чтобы стажеру приходили личные сообщения, нужно создать бота в Telegram через `@BotFather`, получить токен и username бота.
+
+На сервере в папке проекта создай файл `.env`:
+
+```bash
+cd ~/ravshan/service-internship-booking
+nano .env
+```
+
+Добавь туда:
+
+```env
+TELEGRAM_BOT_TOKEN=токен_от_BotFather
+TELEGRAM_BOT_USERNAME=username_бота_без_@
+```
+
+Потом перезапусти приложение:
+
+```bash
+docker compose up -d --build
+```
+
+После этого стажер увидит в форме кнопку подключения Telegram. Он должен один раз открыть бота и нажать Start. Рекрут сможет отправлять уведомления при подтверждении стажировки и при отправке приглашения с залом/ссылкой.
+
 Проверка:
 
 ```bash

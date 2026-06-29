@@ -10,6 +10,9 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 const dataDir = process.env.DATA_DIR || path.join(__dirname, "data");
 const dbPath = path.join(dataDir, "db.json");
+const telegramToken = process.env.TELEGRAM_BOT_TOKEN || "";
+const telegramBotUsername = (process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, "");
+let telegramOffset = 0;
 
 app.use(express.json({ limit: "1mb" }));
 
@@ -101,7 +104,72 @@ async function writeState(state) {
 
 function injectState(html, state) {
   const payload = JSON.stringify(state).replace(/</g, "\\u003c");
-  return html.replace("</head>", `<script>window.__SERVER_STATE__=${payload};</script>\n</head>`);
+  const botPayload = JSON.stringify(telegramBotUsername).replace(/</g, "\\u003c");
+  return html.replace("</head>", `<script>window.__SERVER_STATE__=${payload};window.__TELEGRAM_BOT_USERNAME__=${botPayload};</script>\n</head>`);
+}
+
+async function telegramApi(method, payload) {
+  if (!telegramToken) return { ok: false, skipped: "telegram_token_missing" };
+  const response = await fetch(`https://api.telegram.org/bot${telegramToken}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!data.ok) {
+    const message = data.description || "telegram_error";
+    throw new Error(message);
+  }
+  return data;
+}
+
+async function sendTelegramMessage(chatId, text) {
+  if (!chatId || !text) return { ok: false, skipped: "chat_or_text_missing" };
+  return telegramApi("sendMessage", {
+    chat_id: chatId,
+    text,
+    disable_web_page_preview: true
+  });
+}
+
+async function registerTelegramChat(code, chatId) {
+  if (!code || !chatId) return false;
+  const state = await readState();
+  let registered = false;
+  state.applications = state.applications.map(application => {
+    if (application.telegramCode !== code) return application;
+    registered = true;
+    return { ...application, telegramChatId: String(chatId) };
+  });
+  if (registered) await writeState(state);
+  return registered;
+}
+
+async function pollTelegram() {
+  if (!telegramToken) return;
+  try {
+    const data = await telegramApi("getUpdates", {
+      offset: telegramOffset,
+      timeout: 0,
+      allowed_updates: ["message"]
+    });
+    for (const update of data.result || []) {
+      telegramOffset = Math.max(telegramOffset, update.update_id + 1);
+      const text = update.message?.text || "";
+      const chatId = update.message?.chat?.id;
+      const match = text.match(/^\/start\s+([A-Za-z0-9_-]+)/);
+      if (!match || !chatId) continue;
+      const registered = await registerTelegramChat(match[1], chatId);
+      await sendTelegramMessage(
+        chatId,
+        registered
+          ? "Telegram подключен. Теперь сюда будут приходить уведомления по стажировке."
+          : "Не нашел вашу заявку. Сначала заполните данные и выберите дату в форме записи."
+      );
+    }
+  } catch (error) {
+    console.error("Telegram polling failed", error);
+  }
 }
 
 app.get("/health", (_req, res) => {
@@ -119,6 +187,22 @@ app.get("/api/state", async (_req, res, next) => {
 app.post("/api/state", async (req, res, next) => {
   try {
     res.json(await writeState(req.body));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/notify", async (req, res, next) => {
+  try {
+    const { applicationId, text } = req.body || {};
+    const state = await readState();
+    const application = state.applications.find(item => String(item.id) === String(applicationId));
+    if (!application?.telegramChatId) {
+      res.json({ ok: false, skipped: "telegram_chat_missing" });
+      return;
+    }
+    await sendTelegramMessage(application.telegramChatId, text);
+    res.json({ ok: true });
   } catch (error) {
     next(error);
   }
@@ -145,5 +229,9 @@ app.use((error, _req, res, _next) => {
 
 app.listen(port, "0.0.0.0", async () => {
   await ensureDb();
+  if (telegramToken) {
+    pollTelegram();
+    setInterval(pollTelegram, 5000);
+  }
   console.log(`Service internship booking is listening on ${port}`);
 });
