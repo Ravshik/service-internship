@@ -124,7 +124,7 @@ app.post("/api/state", async (req, res, next) => {
   }
 });
 
-app.get("/", async (_req, res, next) => {
+app.get(["/", "/index.html"], async (_req, res, next) => {
   try {
     const [html, state] = await Promise.all([
       fs.readFile(path.join(__dirname, "index.html"), "utf8"),
