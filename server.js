@@ -63,7 +63,8 @@ function seedState() {
         mentorReport: false,
         createdAt: "2026-06-25"
       }
-    ]
+    ],
+    inviteGroups: []
   };
 }
 
@@ -82,14 +83,16 @@ async function readState() {
   const state = JSON.parse(raw);
   return {
     shifts: Array.isArray(state.shifts) ? state.shifts : [],
-    applications: Array.isArray(state.applications) ? state.applications : []
+    applications: Array.isArray(state.applications) ? state.applications : [],
+    inviteGroups: Array.isArray(state.inviteGroups) ? state.inviteGroups : []
   };
 }
 
 async function writeState(state) {
   const cleanState = {
     shifts: Array.isArray(state.shifts) ? state.shifts : [],
-    applications: Array.isArray(state.applications) ? state.applications : []
+    applications: Array.isArray(state.applications) ? state.applications : [],
+    inviteGroups: Array.isArray(state.inviteGroups) ? state.inviteGroups : []
   };
   await fs.mkdir(dataDir, { recursive: true });
   await fs.writeFile(dbPath, JSON.stringify(cleanState, null, 2), "utf8");
