@@ -82,8 +82,20 @@ async function ensureDb() {
 
 async function readState() {
   await ensureDb();
-  const raw = await fs.readFile(dbPath, "utf8");
-  const state = JSON.parse(raw);
+  let state;
+  try {
+    const raw = await fs.readFile(dbPath, "utf8");
+    state = JSON.parse(raw);
+  } catch (error) {
+    const backupPath = path.join(dataDir, `db.corrupt-${Date.now()}.json`);
+    try {
+      await fs.rename(dbPath, backupPath);
+      console.error(`State file was corrupted. Moved it to ${backupPath}`);
+    } catch (renameError) {
+      console.error("State file was corrupted and could not be moved", renameError);
+    }
+    state = await writeState(seedState());
+  }
   return {
     shifts: Array.isArray(state.shifts) ? state.shifts : [],
     applications: Array.isArray(state.applications) ? state.applications : [],
@@ -98,7 +110,9 @@ async function writeState(state) {
     inviteGroups: Array.isArray(state.inviteGroups) ? state.inviteGroups : []
   };
   await fs.mkdir(dataDir, { recursive: true });
-  await fs.writeFile(dbPath, JSON.stringify(cleanState, null, 2), "utf8");
+  const tempPath = `${dbPath}.tmp`;
+  await fs.writeFile(tempPath, JSON.stringify(cleanState, null, 2), "utf8");
+  await fs.rename(tempPath, dbPath);
   return cleanState;
 }
 
