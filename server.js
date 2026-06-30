@@ -1,4 +1,5 @@
 import express from "express";
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +13,7 @@ const dataDir = process.env.DATA_DIR || path.join(__dirname, "data");
 const dbPath = path.join(dataDir, "db.json");
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN || "";
 const telegramBotUsername = (process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, "");
+const telegramPollingEnabled = process.env.TELEGRAM_POLLING === "yes";
 let telegramOffset = 0;
 
 app.use(express.json({ limit: "1mb" }));
@@ -122,6 +124,27 @@ function injectState(html, state) {
   return html.replace("</head>", `<script>window.__SERVER_STATE__=${payload};window.__TELEGRAM_BOT_USERNAME__=${botPayload};</script>\n</head>`);
 }
 
+function parseTelegramInitData(initData) {
+  if (!telegramToken || !initData) return null;
+  const params = new URLSearchParams(initData);
+  const hash = params.get("hash");
+  if (!hash) return null;
+  params.delete("hash");
+  const dataCheckString = [...params.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+  const secret = crypto.createHmac("sha256", "WebAppData").update(telegramToken).digest();
+  const calculatedHash = crypto.createHmac("sha256", secret).update(dataCheckString).digest("hex");
+  const calculated = Buffer.from(calculatedHash, "hex");
+  const supplied = Buffer.from(hash, "hex");
+  if (calculated.length !== supplied.length) return null;
+  const valid = crypto.timingSafeEqual(calculated, supplied);
+  if (!valid) return null;
+  const user = params.get("user");
+  return user ? JSON.parse(user) : null;
+}
+
 async function telegramApi(method, payload) {
   if (!telegramToken) return { ok: false, skipped: "telegram_token_missing" };
   const response = await fetch(`https://api.telegram.org/bot${telegramToken}/${method}`, {
@@ -222,6 +245,37 @@ app.post("/api/notify", async (req, res, next) => {
   }
 });
 
+app.post("/api/telegram/link", async (req, res, next) => {
+  try {
+    const { applicationId, initData } = req.body || {};
+    const telegramUser = parseTelegramInitData(initData);
+    if (!telegramUser?.id) {
+      res.status(400).json({ ok: false, error: "telegram_auth_failed" });
+      return;
+    }
+    const state = await readState();
+    let linkedApplication = null;
+    state.applications = state.applications.map(application => {
+      if (String(application.id) !== String(applicationId)) return application;
+      linkedApplication = {
+        ...application,
+        telegramChatId: String(telegramUser.id),
+        telegramUserId: String(telegramUser.id),
+        telegramUsername: telegramUser.username || ""
+      };
+      return linkedApplication;
+    });
+    if (!linkedApplication) {
+      res.status(404).json({ ok: false, error: "application_not_found" });
+      return;
+    }
+    await writeState(state);
+    res.json({ ok: true, application: linkedApplication });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get(["/", "/index.html"], async (_req, res, next) => {
   try {
     const [html, state] = await Promise.all([
@@ -243,7 +297,7 @@ app.use((error, _req, res, _next) => {
 
 app.listen(port, "0.0.0.0", async () => {
   await ensureDb();
-  if (telegramToken) {
+  if (telegramToken && telegramPollingEnabled) {
     pollTelegram();
     setInterval(pollTelegram, 5000);
   }

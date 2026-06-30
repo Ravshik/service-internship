@@ -8,5 +8,6 @@ services:
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_POLLING: ${TELEGRAM_POLLING:-}
     volumes:
       - ./data:/app/data

@@ -610,10 +610,13 @@
     </section>
   </main>
 
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const KEY = "internship-booking-app";
     const PROFILE_KEY = `${KEY}-profile`;
     const TELEGRAM_BOT_USERNAME = window.__TELEGRAM_BOT_USERNAME__ || "";
+    const tgApp = window.Telegram?.WebApp || null;
+    const telegramLinkingIds = new Set();
     const statusNames = {
       pending: "Ждет решения",
       queue: "В очереди",
@@ -667,6 +670,11 @@
       groupVenue: document.getElementById("groupVenue"),
       groupLink: document.getElementById("groupLink")
     };
+
+    if (tgApp) {
+      tgApp.ready();
+      tgApp.expand();
+    }
 
     fillProfile();
     render();
@@ -741,7 +749,9 @@
         venueId: app.venueId ?? null,
         groupLink: app.groupLink || "",
         telegramCode: app.telegramCode || "",
-        telegramChatId: app.telegramChatId || ""
+        telegramChatId: app.telegramChatId || "",
+        telegramUserId: app.telegramUserId || "",
+        telegramUsername: app.telegramUsername || ""
       };
     }
 
@@ -888,24 +898,41 @@
     function renderTelegramConnect(current) {
       const target = document.getElementById("telegramConnect");
       if (!target) return;
-      if (!TELEGRAM_BOT_USERNAME) {
-        target.innerHTML = `<b>Telegram-уведомления</b><br>Бот еще не подключен на сервере. После добавления токена здесь появится кнопка подключения.`;
-        return;
-      }
       if (!current) {
-        target.innerHTML = `<b>Telegram-уведомления</b><br>Сначала выберите дату или очередь, потом здесь появится кнопка подключения.`;
+        target.innerHTML = tgApp
+          ? `<b>Telegram-уведомления</b><br>Вы открыли форму внутри Telegram. После выбора даты уведомления подключатся автоматически.`
+          : `<b>Telegram-уведомления</b><br>Откройте эту форму из основного бота${TELEGRAM_BOT_USERNAME ? ` @${escapeHtml(TELEGRAM_BOT_USERNAME)}` : ""}, чтобы уведомления подключились автоматически.`;
         return;
       }
-      const connected = current?.telegramChatId;
-      const code = current.telegramCode || getTelegramCode();
-      if (!current.telegramCode) {
-        current.telegramCode = code;
-        save();
+      if (current.telegramChatId) {
+        target.innerHTML = `<b>Telegram подключен.</b><br>Уведомления о подтверждении и приглашении будут приходить в личные сообщения.`;
+        return;
       }
-      const url = `https://t.me/${encodeURIComponent(TELEGRAM_BOT_USERNAME)}?start=${encodeURIComponent(code)}`;
-      target.innerHTML = connected
-        ? `<b>Telegram подключен.</b><br>Уведомления о подтверждении и приглашении будут приходить в личные сообщения.`
-        : `<b>Telegram-уведомления</b><br><a href="${url}" target="_blank" rel="noopener">Подключить Telegram</a> и нажать Start в боте.`;
+      if (tgApp?.initData) {
+        linkCurrentApplicationToTelegram(current);
+        target.innerHTML = `<b>Telegram-уведомления</b><br>Привязываем вашу заявку к основному боту...`;
+        return;
+      }
+      target.innerHTML = `<b>Telegram-уведомления</b><br>Для автоматических ЛС откройте запись внутри основного бота${TELEGRAM_BOT_USERNAME ? ` @${escapeHtml(TELEGRAM_BOT_USERNAME)}` : ""}.`;
+    }
+
+    function linkCurrentApplicationToTelegram(app) {
+      if (!window.__SERVER_STATE__ || !tgApp?.initData || !app?.id || app.telegramChatId || telegramLinkingIds.has(String(app.id))) return;
+      telegramLinkingIds.add(String(app.id));
+      fetch("/api/telegram/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId: app.id, initData: tgApp.initData })
+      })
+        .then(response => response.json())
+        .then(result => {
+          if (!result.ok || !result.application) return;
+          Object.assign(app, result.application);
+          save();
+          renderTrainee();
+        })
+        .catch(error => console.error("Не удалось привязать Telegram", error))
+        .finally(() => telegramLinkingIds.delete(String(app.id)));
     }
 
     function renderMyStatus(app) {
