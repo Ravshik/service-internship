@@ -755,6 +755,7 @@
     const TELEGRAM_BOT_USERNAME = window.__TELEGRAM_BOT_USERNAME__ || "";
     const tgApp = window.Telegram?.WebApp || null;
     const telegramLinkingIds = new Set();
+    const telegramLinkErrors = new Map();
     const statusNames = {
       pending: "Ждет решения",
       queue: "В очереди",
@@ -1046,6 +1047,11 @@
         target.innerHTML = `<b>Telegram подключен.</b><br>Уведомления о подтверждении и приглашении будут приходить в личные сообщения.`;
         return;
       }
+      const linkError = telegramLinkErrors.get(String(current.id));
+      if (linkError) {
+        target.innerHTML = `<b>Telegram не подключился.</b><br>${escapeHtml(linkError)}<br><button class="quiet" data-retry-telegram="${current.id}" type="button" style="margin-top:8px">Повторить</button>`;
+        return;
+      }
       if (tgApp?.initData) {
         linkCurrentApplicationToTelegram(current);
         target.innerHTML = `<b>Telegram-уведомления</b><br>Привязываем вашу заявку к основному боту...`;
@@ -1056,21 +1062,51 @@
 
     function linkCurrentApplicationToTelegram(app) {
       if (!window.__SERVER_STATE__ || !tgApp?.initData || !app?.id || app.telegramChatId || telegramLinkingIds.has(String(app.id))) return;
-      telegramLinkingIds.add(String(app.id));
+      const appId = String(app.id);
+      telegramLinkingIds.add(appId);
+      telegramLinkErrors.delete(appId);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
       fetch("/api/telegram/link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ applicationId: app.id, initData: tgApp.initData })
+        body: JSON.stringify({ applicationId: app.id, initData: tgApp.initData }),
+        signal: controller.signal
       })
-        .then(response => response.json())
+        .then(async response => {
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || !result.ok) throw new Error(telegramLinkErrorText(result.error || response.status));
+          return result;
+        })
         .then(result => {
-          if (!result.ok || !result.application) return;
+          if (!result.application) throw new Error("Сервер не вернул данные заявки. Попробуйте еще раз.");
           Object.assign(app, result.application);
+          telegramLinkErrors.delete(appId);
           save();
           renderTrainee();
         })
-        .catch(error => console.error("Не удалось привязать Telegram", error))
-        .finally(() => telegramLinkingIds.delete(String(app.id)));
+        .catch(error => {
+          const message = error.name === "AbortError"
+            ? "Сервер долго не отвечает. Проверьте интернет и попробуйте еще раз."
+            : error.message || "Не удалось привязать Telegram. Попробуйте еще раз.";
+          telegramLinkErrors.set(appId, message);
+          console.error("Не удалось привязать Telegram", error);
+        })
+        .finally(() => {
+          clearTimeout(timeout);
+          telegramLinkingIds.delete(appId);
+          renderTrainee();
+        });
+    }
+
+    function telegramLinkErrorText(error) {
+      const map = {
+        telegram_token_missing: "На сервере не найден TELEGRAM_BOT_TOKEN в .env.",
+        telegram_init_data_missing: "Telegram не передал данные мини-приложения. Откройте форму именно из кнопки Web App в основном боте.",
+        telegram_auth_failed: "Telegram не подтвердил данные мини-приложения. Проверьте, что в .env стоит токен именно основного бота.",
+        application_not_found: "Сервер не нашел эту заявку. Обновите форму и выберите дату еще раз."
+      };
+      return map[error] || "Сервер не смог привязать Telegram. Попробуйте еще раз.";
     }
 
     function renderMyStatus(app) {
@@ -1579,6 +1615,12 @@ ${link || "Ссылка на рабочую группу будет здесь"}
       const status = event.target.closest("[data-status]");
       if (status) {
         setStatus(status.dataset.id, status.dataset.status);
+        return;
+      }
+      const retryTelegram = event.target.closest("[data-retry-telegram]");
+      if (retryTelegram) {
+        telegramLinkErrors.delete(String(retryTelegram.dataset.retryTelegram));
+        renderTrainee();
         return;
       }
       const stage = event.target.closest("[data-stage]");

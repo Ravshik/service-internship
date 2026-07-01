@@ -248,6 +248,14 @@ app.post("/api/notify", async (req, res, next) => {
 app.post("/api/telegram/link", async (req, res, next) => {
   try {
     const { applicationId, initData } = req.body || {};
+    if (!telegramToken) {
+      res.status(500).json({ ok: false, error: "telegram_token_missing" });
+      return;
+    }
+    if (!initData) {
+      res.status(400).json({ ok: false, error: "telegram_init_data_missing" });
+      return;
+    }
     const telegramUser = parseTelegramInitData(initData);
     if (!telegramUser?.id) {
       res.status(400).json({ ok: false, error: "telegram_auth_failed" });
