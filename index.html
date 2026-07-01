@@ -433,19 +433,39 @@
       box-shadow: 0 0 0 5px var(--accent-soft);
     }
     .stage-popover {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 50;
+      min-width: 156px;
+      max-width: min(320px, calc(100vw - 28px));
       display: grid;
-      gap: 3px;
-      border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--accent-soft) 72%, var(--surface));
-      padding: 10px 12px;
-      line-height: 1.35;
-      box-shadow: 0 10px 24px rgba(17,24,32,.10);
+      gap: 2px;
+      border: 0;
+      border-radius: 18px;
+      background: rgba(17,24,32,.94);
+      color: #fff;
+      padding: 10px 13px;
+      line-height: 1.25;
+      text-align: left;
+      box-shadow: 0 12px 28px rgba(17,24,32,.28);
+      transform: translate(-50%, calc(-100% - 14px));
+      pointer-events: none;
     }
-    .stage-popover b { font-size: 14px; }
+    .stage-popover::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -6px;
+      width: 12px;
+      height: 12px;
+      background: rgba(17,24,32,.94);
+      transform: translateX(-50%) rotate(45deg);
+    }
+    .stage-popover b { font-size: 13px; }
     .stage-popover span {
-      color: var(--muted);
-      font-size: 13px;
+      color: rgba(255,255,255,.78);
+      font-size: 11px;
     }
     .invite-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .9fr); gap: 12px; align-items: start; }
     .venue-card {
@@ -754,6 +774,7 @@
     const tgApp = window.Telegram?.WebApp || null;
     const telegramLinkingIds = new Set();
     const telegramLinkErrors = new Map();
+    const stagePopoverTimers = new Map();
     const statusNames = {
       pending: "Ждет решения",
       queue: "В очереди",
@@ -1210,6 +1231,25 @@
       `;
     }
 
+    function showStagePopover(button, appId, item) {
+      const info = document.getElementById(`stageInfo-${appId}`);
+      if (!info || !item) return;
+      document.querySelectorAll(".stage-popover").forEach(popover => {
+        if (popover !== info) popover.classList.add("hidden");
+      });
+      const rect = button.getBoundingClientRect();
+      const left = Math.min(Math.max(rect.left + rect.width / 2, 86), window.innerWidth - 86);
+      const top = Math.max(rect.top - 4, 72);
+      info.innerHTML = `<b>${escapeHtml(item.title)}</b><span>${escapeHtml(item.hint)}</span>`;
+      info.style.left = `${left}px`;
+      info.style.top = `${top}px`;
+      info.classList.remove("hidden");
+      clearTimeout(stagePopoverTimers.get(String(appId)));
+      stagePopoverTimers.set(String(appId), setTimeout(() => {
+        info.classList.add("hidden");
+      }, 2600));
+    }
+
     function stageIcon(name) {
       const icons = {
         list: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>`,
@@ -1649,12 +1689,8 @@ ${escapeHtml(link || "Ссылка на рабочую группу будет �
       }
       const stage = event.target.closest("[data-stage]");
       if (stage) {
-        const info = document.getElementById(`stageInfo-${stage.dataset.stageApp}`);
         const item = stageItems()[Number(stage.dataset.stage) - 1];
-        if (info && item) {
-          info.innerHTML = `<b>${escapeHtml(item.title)}</b><span>${escapeHtml(item.hint)}</span>`;
-          info.classList.remove("hidden");
-        }
+        showStagePopover(stage, stage.dataset.stageApp, item);
         return;
       }
       const member = event.target.closest("[data-toggle-member]");
