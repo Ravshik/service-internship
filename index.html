@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Редизайн записи на стажировку</title>
   <style>
     :root {
@@ -39,6 +39,7 @@
     }
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--bg); color: var(--text); }
+    html, body { touch-action: manipulation; }
     button, input, select, textarea { font: inherit; }
     button { cursor: pointer; }
     button:disabled { cursor: not-allowed; opacity: .55; }
@@ -431,7 +432,7 @@
       color: #fff;
       box-shadow: 0 0 0 5px var(--accent-soft);
     }
-    .stage-info {
+    .stage-popover {
       display: grid;
       gap: 3px;
       border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
@@ -439,9 +440,10 @@
       background: color-mix(in srgb, var(--accent-soft) 72%, var(--surface));
       padding: 10px 12px;
       line-height: 1.35;
+      box-shadow: 0 10px 24px rgba(17,24,32,.10);
     }
-    .stage-info b { font-size: 14px; }
-    .stage-info span {
+    .stage-popover b { font-size: 14px; }
+    .stage-popover span {
       color: var(--muted);
       font-size: 13px;
     }
@@ -589,14 +591,10 @@
           <p class="lead">Кандидат выбирает дату или очередь, рекрут подтверждает выход и ведет итог стажировки.</p>
         </div>
         <div class="tools">
-          <button class="quiet" id="demoBtn" type="button">Вернуть демо</button>
+          <button class="quiet" id="recruiterCabinetBtn" type="button">Кабинет рекрута</button>
           <button class="quiet" id="clearBtn" type="button">Очистить все</button>
         </div>
       </div>
-      <nav class="tabs" aria-label="Роль">
-        <button class="tab active" data-role="trainee" type="button">Я стажер</button>
-        <button class="tab" data-role="recruiter" type="button">Я рекрут</button>
-      </nav>
     </header>
 
     <section id="traineeView">
@@ -654,7 +652,7 @@
       <section class="panel" id="gate">
         <h2>Кабинет рекрута</h2>
         <label>Код доступа
-          <input id="recruiterCode" placeholder="2026">
+          <input id="recruiterCode" placeholder="1998">
         </label>
         <button class="primary" id="unlockBtn" type="button">Войти</button>
       </section>
@@ -961,6 +959,7 @@
       document.querySelectorAll(".tab").forEach(tab => tab.classList.toggle("active", tab.dataset.role === role));
       document.getElementById("traineeView").classList.toggle("hidden", role !== "trainee");
       document.getElementById("recruiterView").classList.toggle("hidden", role !== "recruiter");
+      document.getElementById("recruiterCabinetBtn").textContent = role === "recruiter" ? "К форме записи" : "Кабинет рекрута";
       document.getElementById("gate").classList.toggle("hidden", unlocked);
       document.getElementById("recruiterWorkspace").classList.toggle("hidden", !unlocked);
       renderTrainee();
@@ -1146,16 +1145,13 @@
               <b>${shift ? formatDate(shift.date) : "Общая очередь"}</b>
             </div>
           </div>
-          <div class="badges">
-            ${badge(app.training === "passed", trainingNames[app.training])}
-            ${badge(app.attempt === "first", attemptNames[app.attempt])}
-          </div>
           <div class="notice status-message">${escapeHtml(statusText[app.status] || "Статус заявки обновлен.")}</div>
           ${["pending", "queue"].includes(app.status) ? `<div class="meta">Данные заявки можно изменить выше в блоке “Мои данные”. Изменения сохраняются автоматически до решения рекрута.</div>` : ""}
           ${renderStageTrack(app)}
           ${app.status === "invited" ? renderTraineeInvite(app) : ""}
           ${app.comment ? `<div class="notice">Комментарий рекрута: ${escapeHtml(app.comment)}</div>` : ""}
           ${["pending", "queue"].includes(app.status) ? `<button class="danger" data-cancel="${app.id}" type="button">Отменить заявку</button>` : ""}
+          ${["failed", "noshow"].includes(app.status) ? `<button class="secondary" data-reapply-queue="${app.id}" type="button">Встать в очередь заново</button>` : ""}
         </article>
       `;
     }
@@ -1198,7 +1194,6 @@
     function renderStageTrack(app) {
       const current = stageNumber(app);
       const stages = stageItems();
-      const active = stages[current - 1] || stages[0];
       return `
         <div class="stage-track" aria-label="Этапы заявки">
           ${stages.map((item, index) => {
@@ -1211,10 +1206,7 @@
             `;
           }).join("")}
         </div>
-        <div class="stage-info" id="stageInfo-${app.id}">
-          <b>${escapeHtml(active.title)}</b>
-          <span>${escapeHtml(active.hint)}</span>
-        </div>
+        <div class="stage-popover hidden" id="stageInfo-${app.id}"></div>
       `;
     }
 
@@ -1383,10 +1375,7 @@
         `;
       }).join("") : `<div class="empty">На выбранную дату нет подтвержденных кандидатов.</div>`;
 
-      const previewName = draft.memberIds.length === 1
-        ? state.applications.find(app => String(app.id) === String(draft.memberIds[0]))?.name || "кандидат"
-        : "кандидаты";
-      document.getElementById("invitePreview").textContent = composeInviteMessage(venue, draft.link, previewName);
+      document.getElementById("invitePreview").innerHTML = composeInviteMessage(venue, draft.link);
       document.getElementById("sendInvitesBtn").disabled = !draft.memberIds.length || !draft.link.trim();
 
       document.getElementById("sentGroups").innerHTML = state.inviteGroups.length ? state.inviteGroups.slice().reverse().map(group => {
@@ -1461,7 +1450,9 @@
         return;
       }
       const current = currentApplication();
-      if (current && !["pending", "queue"].includes(current.status)) return;
+      const canUpdateCurrent = current && ["pending", "queue"].includes(current.status);
+      const canReapply = current && ["failed", "noshow"].includes(current.status);
+      if (current && !canUpdateCurrent && !canReapply) return;
       const payload = {
         shiftId: type === "queue" ? null : shiftId,
         name: state.profile.name,
@@ -1472,7 +1463,7 @@
         status: type === "queue" ? "queue" : "pending",
         comment: ""
       };
-      if (current && ["pending", "queue"].includes(current.status)) {
+      if (canUpdateCurrent) {
         Object.assign(current, payload);
         state.profile.activeAppId = current.id;
       } else {
@@ -1496,15 +1487,20 @@
 
     function composeConfirmedMessage(app) {
       const shift = state.shifts.find(item => item.id === app.shiftId);
-      return `Ваша запись на стажировку подтверждена.${shift ? `\nДата: ${formatDate(shift.date)}` : ""}\nОжидайте приглашение в рабочую группу.`;
+      return `<b>🎉 Ваша запись на стажировку подтверждена!</b>
+
+${shift ? `<b>📅 Дата стажировки: ${escapeHtml(formatLongDate(shift.date))}.</b>\n` : ""}
+В ближайшее время вас добавят в рабочую группу. После этого вы получите всю необходимую информацию о стажировке, включая место проведения, подготовку к смене и дальнейшие инструкции.
+
+Пожалуйста, ожидайте приглашение.`;
     }
 
-    function notifyApplication(app, text) {
+    function notifyApplication(app, text, photo = "", photoCaption = "") {
       if (!window.__SERVER_STATE__ || !app?.id || !text) return;
       fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ applicationId: app.id, text })
+        body: JSON.stringify({ applicationId: app.id, text, photo, photoCaption })
       }).catch(error => console.error("Не удалось отправить Telegram-уведомление", error));
     }
 
@@ -1520,27 +1516,51 @@
       return venues.find(venue => venue.id === id) || null;
     }
 
-    function composeInviteMessage(venue, link, name) {
-      return `Добрый день! Вы записаны на стажировку в ${venue.name} по адресу: ${venue.address}
-Перейдите по ссылке ниже и обязательно напишите в эту группу, что Вы выходите на стажировку.
+    function composeInviteMessage(venue, link) {
+      return `<b>🎉 Ваша заявка на стажировку одобрена!</b>
 
-${link || "Ссылка на рабочую группу будет здесь"}
+Вы записаны на стажировку в ${escapeHtml(formatVenueNameForMessage(venue.name))}.
 
-Перед выходом на смену Вам необходимо изучить техническое задание мероприятия, а также меню. Для качественной подготовки к стажировке используйте: https://t.me/LOFT_HELPER_V2_BOT, повторите этапы обслуживания, изучите меню, а также историю площадки. Вся информация появится в рабочей группе не позднее чем за день до мероприятия.
+📍 Адрес: ${escapeHtml(venue.address)}.
 
-На смене к Вам будет прикреплен опытный наставник, который будет сопровождать Вашу работу на протяжении всей стажировки. Проявляйте инициативу, задавайте вопросы. Необходимо взять максимум и показать максимум, чтобы успешно пройти стажировку.
+Пожалуйста, перейдите по ссылке ниже и напишите в рабочую группу, что выходите на стажировку.
 
-ВАЖНО!!! Обратите внимание на внешний вид. Вы - лицо нашей компании.
+${escapeHtml(link || "Ссылка на рабочую группу будет здесь")}
 
-Всегда на связи. Если Вы не сможете выйти на стажировку, предупреждайте заранее, чтобы мы успели предоставить эту возможность другому кандидату, так как места ограничены.
+До смены необходимо:
 
-УСЛОВИЯ: время выхода назначает менеджер. Время стажировки - 6 часов. Оплата - 1000 рублей.
+• изучить техническое задание мероприятия;
+• ознакомиться с меню;
+• повторить этапы обслуживания и изучить историю площадки в боте LOFT HELPER.
 
-УСПЕХОВ! #стажировка`;
+Вся информация о мероприятии появится в рабочей группе не позднее чем за день до смены.
+
+Во время стажировки за вами будет закреплён опытный наставник, который поможет освоиться и ответит на все вопросы.
+
+❗️Не забудьте о внешнем виде — вы представляете компанию LOFT HALL.
+
+Если по какой-либо причине вы не сможете выйти на стажировку, пожалуйста, сообщите об этом заранее, чтобы мы смогли предложить место другому кандидату.
+
+Условия стажировки:
+• время выхода сообщает менеджер;
+• продолжительность — 6 часов;
+• оплата — 1000 ₽.
+
+Желаем успешной стажировки! 🚀
+
+#стажировка`;
     }
 
     function formatDate(value) {
       return new Date(`${value}T12:00:00`).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", weekday: "short" });
+    }
+
+    function formatLongDate(value) {
+      return new Date(`${value}T12:00:00`).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", weekday: "long" });
+    }
+
+    function formatVenueNameForMessage(name) {
+      return String(name || "").replace(/LOFT#(\d+)/g, "LOFT #$1");
     }
 
     function toDateInputValue(date) {
@@ -1583,9 +1603,8 @@ ${link || "Ссылка на рабочую группу будет здесь"}
     }
 
     document.addEventListener("click", event => {
-      const tab = event.target.closest("[data-role]");
-      if (tab) {
-        role = tab.dataset.role;
+      if (event.target.id === "recruiterCabinetBtn") {
+        role = role === "recruiter" ? "trainee" : "recruiter";
         render();
         return;
       }
@@ -1612,6 +1631,11 @@ ${link || "Ссылка на рабочую группу будет здесь"}
         render();
         return;
       }
+      const reapplyQueue = event.target.closest("[data-reapply-queue]");
+      if (reapplyQueue) {
+        createApplication("queue", null);
+        return;
+      }
       const status = event.target.closest("[data-status]");
       if (status) {
         setStatus(status.dataset.id, status.dataset.status);
@@ -1629,6 +1653,7 @@ ${link || "Ссылка на рабочую группу будет здесь"}
         const item = stageItems()[Number(stage.dataset.stage) - 1];
         if (info && item) {
           info.innerHTML = `<b>${escapeHtml(item.title)}</b><span>${escapeHtml(item.hint)}</span>`;
+          info.classList.remove("hidden");
         }
         return;
       }
@@ -1675,7 +1700,7 @@ ${link || "Ссылка на рабочую группу будет здесь"}
         return;
       }
       if (event.target.id === "unlockBtn") {
-        if (fields.recruiterCode.value.trim() !== "2026") {
+        if (fields.recruiterCode.value.trim() !== "1998") {
           fields.recruiterCode.focus();
           return;
         }
@@ -1723,7 +1748,7 @@ ${link || "Ссылка на рабочую группу будет здесь"}
           app.inviteGroupId = group.id;
           app.venueId = group.venueId;
           app.groupLink = group.link;
-          if (venue) notifyApplication(app, composeInviteMessage(venue, group.link, app.name));
+          if (venue) notifyApplication(app, composeInviteMessage(venue, group.link), venue.photo, venue.name);
         });
         draft.memberIds = [];
         draft.link = "";
@@ -1794,6 +1819,8 @@ ${link || "Ссылка на рабочую группу будет здесь"}
         renderInviteGroups();
       });
     });
+    document.addEventListener("dblclick", event => event.preventDefault(), { passive: false });
+    document.addEventListener("gesturestart", event => event.preventDefault(), { passive: false });
   </script>
 </body>
 </html>

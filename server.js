@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+app.set("trust proxy", true);
 
 const port = Number(process.env.PORT || 3000);
 const dataDir = process.env.DATA_DIR || path.join(__dirname, "data");
@@ -165,8 +166,29 @@ async function sendTelegramMessage(chatId, text) {
   return telegramApi("sendMessage", {
     chat_id: chatId,
     text,
+    parse_mode: "HTML",
     disable_web_page_preview: true
   });
+}
+
+async function sendTelegramPhoto(chatId, photo, caption = "") {
+  if (!chatId || !photo) return { ok: false, skipped: "chat_or_photo_missing" };
+  return telegramApi("sendPhoto", {
+    chat_id: chatId,
+    photo,
+    caption: caption.slice(0, 1024),
+    parse_mode: "HTML"
+  });
+}
+
+function absoluteAssetUrl(req, source) {
+  if (!source) return "";
+  if (/^https?:\/\//i.test(source)) return source;
+  const protocol = String(req.get("x-forwarded-proto") || req.protocol || "https").split(",")[0].trim();
+  const host = req.get("x-forwarded-host") || req.get("host");
+  if (!host) return "";
+  const cleanPath = source.startsWith("/") ? source : `/${source}`;
+  return new URL(cleanPath, `${protocol}://${host}`).toString();
 }
 
 async function registerTelegramChat(code, chatId) {
@@ -231,14 +253,16 @@ app.post("/api/state", async (req, res, next) => {
 
 app.post("/api/notify", async (req, res, next) => {
   try {
-    const { applicationId, text } = req.body || {};
+    const { applicationId, text, photo, photoCaption } = req.body || {};
     const state = await readState();
     const application = state.applications.find(item => String(item.id) === String(applicationId));
     if (!application?.telegramChatId) {
       res.json({ ok: false, skipped: "telegram_chat_missing" });
       return;
     }
-    await sendTelegramMessage(application.telegramChatId, text);
+    const photoUrl = absoluteAssetUrl(req, photo);
+    if (photoUrl) await sendTelegramPhoto(application.telegramChatId, photoUrl, photoCaption || "");
+    if (text) await sendTelegramMessage(application.telegramChatId, text);
     res.json({ ok: true });
   } catch (error) {
     next(error);
