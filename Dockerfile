@@ -9,6 +9,7 @@ COPY server.js ./
 COPY index.html ./
 COPY puzzlebot-embed.html ./
 COPY nginx.conf ./
+COPY assets ./assets
 
 RUN mkdir -p /app/data
 

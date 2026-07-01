@@ -53,7 +53,7 @@
     .meta { font-size: 14px; }
     .tabs, .subtabs, .grid, .stats, .actions, .date-list, .list, .form { display: grid; gap: 10px; }
     .tabs { grid-template-columns: 1fr 1fr; }
-    .subtabs { grid-template-columns: repeat(4, 1fr); margin-bottom: 12px; }
+    .subtabs { grid-template-columns: repeat(4, 1fr); margin: 10px 0 12px; }
     .grid { grid-template-columns: 1fr 1fr; }
     .stats { grid-template-columns: repeat(4, 1fr); }
     .panel, .card, .date-card, .stat {
@@ -363,6 +363,88 @@
     .step.done .dot { background: var(--accent); color: #fff; }
     .step span { display: block; color: var(--muted); font-size: 13px; line-height: 1.35; margin-top: 2px; }
     .status-message { font-weight: 800; }
+    .stage-track {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--field);
+      padding: 10px 8px;
+    }
+    .stage-node {
+      position: relative;
+      min-width: 0;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 0;
+    }
+    .stage-node::before {
+      content: "";
+      position: absolute;
+      right: 50%;
+      left: -50%;
+      top: 50%;
+      height: 2px;
+      background: var(--line);
+      transform: translateY(-50%);
+    }
+    .stage-node:first-child::before { display: none; }
+    .stage-node.done::before,
+    .stage-node.current::before { background: color-mix(in srgb, var(--accent) 62%, var(--line)); }
+    .stage-dot {
+      position: relative;
+      z-index: 1;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--muted);
+      box-shadow: 0 0 0 4px var(--field);
+    }
+    .stage-dot svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      stroke-width: 2.3;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .stage-node.done .stage-dot {
+      border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .stage-node.current .stage-dot {
+      width: 34px;
+      height: 34px;
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 0 5px var(--accent-soft);
+    }
+    .stage-info {
+      display: grid;
+      gap: 3px;
+      border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--accent-soft) 72%, var(--surface));
+      padding: 10px 12px;
+      line-height: 1.35;
+    }
+    .stage-info b { font-size: 14px; }
+    .stage-info span {
+      color: var(--muted);
+      font-size: 13px;
+    }
     .invite-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .9fr); gap: 12px; align-items: start; }
     .venue-card {
       display: grid;
@@ -380,6 +462,19 @@
       padding: 12px;
       color: #fff;
       font-weight: 950;
+      background:
+        linear-gradient(135deg, rgba(17,24,32,.18), rgba(17,24,32,.68)),
+        var(--venue-image, linear-gradient(135deg, #8f3f25, #1e5965));
+      background-position: center;
+      background-size: cover;
+    }
+    .venue-photo span {
+      border-radius: 999px;
+      background: rgba(17,24,32,.58);
+      padding: 6px 10px;
+      backdrop-filter: blur(4px);
+    }
+    .venue-photo.no-photo {
       background:
         linear-gradient(135deg, rgba(17,24,32,.18), rgba(17,24,32,.68)),
         linear-gradient(135deg, #8f3f25, #1e5965);
@@ -412,12 +507,45 @@
       display: grid;
       gap: 8px;
     }
+    .quick-dates {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 0;
+    }
+    .date-shortcut {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface-2) 72%, var(--field));
+      color: var(--text);
+      padding: 5px 6px;
+      display: grid;
+      gap: 1px;
+      place-items: center;
+      text-align: center;
+      line-height: 1.1;
+    }
+    .date-shortcut b {
+      font-size: 15px;
+      font-weight: 950;
+    }
+    .date-shortcut span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .date-shortcut.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
     .hidden { display: none !important; }
     @media (max-width: 720px) {
       .app { padding: 16px 12px 28px; }
       h1 { font-size: 30px; }
       .tabs, .grid { grid-template-columns: 1fr; }
-      .subtabs, .stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .subtabs, .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
       .subtab { min-height: 48px; }
       .stat { padding: 9px 6px; }
       .stat b { font-size: 21px; }
@@ -438,6 +566,15 @@
       .timeline { grid-template-columns: 1fr; }
       .step-arrow { display: none; }
       .step + .step { border-top: 1px solid var(--line); }
+      .stage-track { padding: 8px 6px; }
+      .stage-node { height: 30px; }
+      .stage-dot { width: 26px; height: 26px; box-shadow: 0 0 0 3px var(--field); }
+      .stage-dot svg { width: 13px; height: 13px; }
+      .stage-node.current .stage-dot {
+        width: 30px;
+        height: 30px;
+        box-shadow: 0 0 0 4px var(--accent-soft);
+      }
       .head, .date-head, .candidate-head { align-items: stretch; }
       .pill { align-self: flex-start; }
     }
@@ -598,6 +735,7 @@
             <div class="grid">
               <label>Дата
                 <input id="newDate" type="date">
+                <div class="quick-dates" id="quickDates"></div>
               </label>
               <label>Количество мест
                 <input id="newSeats" type="number" min="1" max="30" value="4">
@@ -640,16 +778,16 @@
     const trainingNames = { passed: "Обучение пройдено", not_passed: "Без обучения" };
     const attemptNames = { first: "Первая стажировка", repeat: "Повторная" };
     const venues = [
-      { id: "loft1", name: "LOFT#1", address: "ул. Ленинская Слобода, 26, стр. 35", photo: "Фото LOFT#1" },
-      { id: "loft2", name: "LOFT#2", address: "ул. Ленинская Слобода, 26с11", photo: "Фото LOFT#2" },
-      { id: "loft3", name: "LOFT#3", address: "ул. Ленинская Слобода, 26с15", photo: "Фото LOFT#3" },
-      { id: "loft4", name: "LOFT#4", address: "2-й Кожуховский проезд, 29к6", photo: "Фото LOFT#4" },
-      { id: "loft5_contrabanda", name: "LOFT#5 CONTRABANDA", address: "ул. Ленинская Слобода, 26, стр. 23", photo: "Фото LOFT#5, зал CONTRABANDA" },
-      { id: "loft5_small", name: "LOFT#5 SMALL", address: "ул. Ленинская Слобода, 26, стр. 23", photo: "Фото LOFT#5, зал SMALL" },
-      { id: "loft8", name: "LOFT#8", address: "ул. Волочаевская, 48, стр. 1", photo: "Фото LOFT#8" },
-      { id: "loft10", name: "LOFT#10 (TAU)", address: "Рязанский проспект, 8а, ст10", photo: "Фото LOFT#10 (TAU)" },
-      { id: "birch", name: "THE BIRCH", address: "Солнечногорский район, поселок Жуково", photo: "Фото THE BIRCH" },
-      { id: "metelitsa", name: "МЕТЕЛИЦА", address: "улица Новый Арбат, дом 21", photo: "Фото МЕТЕЛИЦА" }
+      { id: "loft1", name: "LOFT#1", address: "ул. Ленинская Слобода, 26, стр. 35", photo: "assets/venues/loft1.jpg" },
+      { id: "loft2", name: "LOFT#2", address: "ул. Ленинская Слобода, 26с11", photo: "assets/venues/loft2.jpg" },
+      { id: "loft3", name: "LOFT#3", address: "ул. Ленинская Слобода, 26с15", photo: "assets/venues/loft3.jpg" },
+      { id: "loft4", name: "LOFT#4", address: "2-й Кожуховский проезд, 29к6", photo: "assets/venues/loft4.jpg" },
+      { id: "loft5_contrabanda", name: "LOFT#5 CONTRABANDA", address: "ул. Ленинская Слобода, 26, стр. 23", photo: "assets/venues/loft5-contrabanda.jpg" },
+      { id: "loft5_small", name: "LOFT#5 SMALL", address: "ул. Ленинская Слобода, 26, стр. 23", photo: "assets/venues/loft5-small.jpg" },
+      { id: "loft8", name: "LOFT#8", address: "ул. Волочаевская, 48, стр. 1", photo: "assets/venues/loft8.jpg" },
+      { id: "loft10", name: "LOFT#10 (TAU)", address: "Рязанский проспект, 8а, ст10", photo: "assets/venues/loft10.JPG" },
+      { id: "birch", name: "THE BIRCH", address: "Солнечногорский район, поселок Жуково", photo: "assets/venues/birch.jpg" },
+      { id: "metelitsa", name: "МЕТЕЛИЦА", address: "улица Новый Арбат, дом 21", photo: "assets/venues/metelitsa.jpg" }
     ];
 
     let role = "trainee";
@@ -937,8 +1075,6 @@
 
     function renderMyStatus(app) {
       const shift = state.shifts.find(item => item.id === app.shiftId);
-      const processed = ["confirmed", "invited", "feedback", "passed", "failed", "noshow"].includes(app.status);
-      const final = ["passed", "failed", "noshow"].includes(app.status);
       const statusText = {
         pending: "Заявка отправлена. Рекрут еще не подтвердил выход.",
         queue: "Вы в общей очереди. Рекрут поставит вас на подходящую дату.",
@@ -980,18 +1116,83 @@
           </div>
           <div class="notice status-message">${escapeHtml(statusText[app.status] || "Статус заявки обновлен.")}</div>
           ${["pending", "queue"].includes(app.status) ? `<div class="meta">Данные заявки можно изменить выше в блоке “Мои данные”. Изменения сохраняются автоматически до решения рекрута.</div>` : ""}
-          <div class="timeline">
-            <div class="step done"><div class="dot">1</div><b>Заявка</b><span>${shift ? "Вы выбрали дату." : "Вы стоите в очереди."}</span></div>
-            <div class="step-arrow" aria-hidden="true"></div>
-            <div class="step ${processed ? "done" : ""}"><div class="dot">2</div><b>Подтверждение</b><span>${processed ? "Рекрут обработал заявку." : "Можно отменить до решения."}</span></div>
-            <div class="step-arrow" aria-hidden="true"></div>
-            <div class="step ${final ? "done" : ""}"><div class="dot">3</div><b>Итог</b><span>${final ? statusNames[app.status] : "Появится после выхода."}</span></div>
-          </div>
+          ${renderStageTrack(app)}
           ${app.status === "invited" ? renderTraineeInvite(app) : ""}
           ${app.comment ? `<div class="notice">Комментарий рекрута: ${escapeHtml(app.comment)}</div>` : ""}
           ${["pending", "queue"].includes(app.status) ? `<button class="danger" data-cancel="${app.id}" type="button">Отменить заявку</button>` : ""}
         </article>
       `;
+    }
+
+    function stageItems() {
+      return [
+        { title: "Встал в очередь", hint: "Заявка есть в системе, но дата стажировки еще не закреплена.", icon: "list" },
+        { title: "Заявка на рассмотрении", hint: "Рекрут видит заявку и проверяет возможность выхода на выбранную дату.", icon: "clock" },
+        { title: "Заявка принята", hint: "Выход подтвержден. Дальше рекрут отправит детали стажировки.", icon: "check" },
+        { title: "Информация направлена", hint: "Отправлены площадка, ссылка на рабочую группу и важные инструкции.", icon: "send" },
+        { title: "День стажировки", hint: "Кандидат выходит на стажировку по согласованной дате.", icon: "calendar" },
+        { title: "Обратная связь наставника", hint: "Стажировка прошла, команда собирает обратную связь от наставника.", icon: "chat" },
+        { title: "Итог стажировки", hint: "Финальный результат зафиксирован: прошел, не прошел или не вышел.", icon: "flag" }
+      ];
+    }
+
+    function stageNumber(app) {
+      const shift = state.shifts.find(item => item.id === app.shiftId);
+      if (app.status === "invited" && shift && isTodayOrPast(shift.date)) return 5;
+      const map = {
+        queue: 1,
+        pending: 2,
+        confirmed: 3,
+        invited: 4,
+        feedback: 6,
+        passed: 7,
+        failed: 7,
+        noshow: 7
+      };
+      return map[app.status] || 2;
+    }
+
+    function isTodayOrPast(value) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const date = new Date(`${value}T00:00:00`);
+      return date <= today;
+    }
+
+    function renderStageTrack(app) {
+      const current = stageNumber(app);
+      const stages = stageItems();
+      const active = stages[current - 1] || stages[0];
+      return `
+        <div class="stage-track" aria-label="Этапы заявки">
+          ${stages.map((item, index) => {
+            const number = index + 1;
+            const stateClass = number < current ? "done" : number === current ? "current" : "";
+            return `
+              <button class="stage-node ${stateClass}" data-stage="${number}" data-stage-app="${app.id}" type="button" aria-label="${escapeHtml(item.title)}">
+                <span class="stage-dot">${stageIcon(item.icon)}</span>
+              </button>
+            `;
+          }).join("")}
+        </div>
+        <div class="stage-info" id="stageInfo-${app.id}">
+          <b>${escapeHtml(active.title)}</b>
+          <span>${escapeHtml(active.hint)}</span>
+        </div>
+      `;
+    }
+
+    function stageIcon(name) {
+      const icons = {
+        list: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>`,
+        clock: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>`,
+        check: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4 4L19 6"/></svg>`,
+        send: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4 18-7z"/></svg>`,
+        calendar: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v4M17 3v4M4 9h16M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>`,
+        chat: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14v9H8l-3 3V6z"/><path d="M8 10h8M8 13h5"/></svg>`,
+        flag: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4h10l-1 4 1 4H6"/></svg>`
+      };
+      return icons[name] || icons.check;
     }
 
     function renderTraineeInvite(app) {
@@ -1021,6 +1222,7 @@
       renderRecruiterDates();
       renderCandidates();
       renderInviteGroups();
+      renderQuickDates();
     }
 
     function renderRecruiterDates() {
@@ -1121,7 +1323,9 @@
 
       const venue = venueById(draft.venueId) || venues[0];
       document.getElementById("venueCard").innerHTML = `
-        <div class="venue-photo">${escapeHtml(venue.photo)}</div>
+        <div class="venue-photo ${venue.photo ? "" : "no-photo"}" style="${venue.photo ? `--venue-image: url('${escapeHtml(venue.photo)}')` : ""}">
+          <span>${escapeHtml(venue.name)}</span>
+        </div>
         <div><b>${escapeHtml(venue.name)}</b></div>
         <div class="meta">${escapeHtml(venue.address)}</div>
       `;
@@ -1303,6 +1507,37 @@ ${link || "Ссылка на рабочую группу будет здесь"}
       return new Date(`${value}T12:00:00`).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", weekday: "short" });
     }
 
+    function toDateInputValue(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function shortDate(value) {
+      const date = new Date(`${value}T12:00:00`);
+      return date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
+    }
+
+    function renderQuickDates() {
+      const target = document.getElementById("quickDates");
+      if (!target) return;
+      const labels = ["завтра", "послезавтра", "через 3 дня"];
+      const today = new Date();
+      const dates = labels.map((label, index) => {
+        const date = new Date(today);
+        date.setDate(today.getDate() + index + 1);
+        const value = toDateInputValue(date);
+        return { label, value };
+      });
+      target.innerHTML = dates.map(item => `
+        <button class="date-shortcut ${fields.newDate.value === item.value ? "active" : ""}" data-quick-date="${item.value}" type="button">
+          <b>${shortDate(item.value)}</b>
+          <span>${item.label}</span>
+        </button>
+      `).join("");
+    }
+
     function badge(active, label) {
       return `<span class="badge ${active ? "good" : ""}">${escapeHtml(label)}</span>`;
     }
@@ -1344,6 +1579,15 @@ ${link || "Ссылка на рабочую группу будет здесь"}
       const status = event.target.closest("[data-status]");
       if (status) {
         setStatus(status.dataset.id, status.dataset.status);
+        return;
+      }
+      const stage = event.target.closest("[data-stage]");
+      if (stage) {
+        const info = document.getElementById(`stageInfo-${stage.dataset.stageApp}`);
+        const item = stageItems()[Number(stage.dataset.stage) - 1];
+        if (info && item) {
+          info.innerHTML = `<b>${escapeHtml(item.title)}</b><span>${escapeHtml(item.hint)}</span>`;
+        }
         return;
       }
       const member = event.target.closest("[data-toggle-member]");
@@ -1409,6 +1653,12 @@ ${link || "Ссылка на рабочую группу будет здесь"}
         section = "dates";
         save();
         render();
+        return;
+      }
+      const quickDate = event.target.closest("[data-quick-date]");
+      if (quickDate) {
+        fields.newDate.value = quickDate.dataset.quickDate;
+        renderQuickDates();
         return;
       }
       if (event.target.id === "sendInvitesBtn") {
@@ -1485,6 +1735,9 @@ ${link || "Ссылка на рабочую группу будет здесь"}
         if (event.target === fields.groupShift) draft.memberIds = [];
         save();
         renderInviteGroups();
+      }
+      if (event.target === fields.newDate) {
+        renderQuickDates();
       }
     });
 
